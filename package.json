@@ -7,9 +7,14 @@
     "start": "tsx src/index.ts",
     "dev": "tsx watch src/index.ts",
     "dev:dashboard": "cd dashboard && npm run dev",
-    "dev:all": "concurrently \"npm run dev\" \"npm run dev:dashboard\"",
+    "dev:all": "concurrently \"npm run facilitator\" \"npm run dev\" \"npm run dev:dashboard\"",
+    "dev:x402": "concurrently \"npm run facilitator\" \"npm run dev\"",
+    "facilitator": "tsx src/facilitator.ts",
+    "deploy:usdc": "npx hardhat run scripts/deploy-usdc.ts --network arbitrumSepolia",
+    "seed:usdc": "npx hardhat run scripts/seed-usdc.ts --network arbitrumSepolia",
     "build:dashboard": "cd dashboard && npm run build",
     "demo": "tsx scripts/demo.ts",
+    "setup:usdc": "npx hardhat compile && npm run deploy:usdc && npm run seed:usdc",
     "test:endpoints": "tsx scripts/test-endpoints.ts",
     "test:payment": "tsx scripts/test-payment.ts",
     "setup": "bash scripts/setup.sh"
@@ -25,9 +30,11 @@
     "viem": "^2.23.2"
   },
   "devDependencies": {
+    "@nomicfoundation/hardhat-toolbox": "^5.0.0",
     "@types/express": "^5.0.0",
     "@types/node": "^22.10.5",
     "concurrently": "^9.1.2",
+    "hardhat": "^2.22.0",
     "ts-node": "^10.9.2",
     "tsx": "^4.21.0",
     "typescript": "^5.7.3"

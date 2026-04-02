@@ -7,14 +7,15 @@
  */
 
 import express from "express";
-import { paymentMiddleware, x402ResourceServer } from "@x402/express";
+import { paymentMiddlewareFromHTTPServer, x402HTTPResourceServer, x402ResourceServer } from "@x402/express";
 import { HTTPFacilitatorClient } from "@x402/core/server";
 import { ExactEvmScheme } from "@x402/evm/exact/server";
 import type { Network } from "@x402/core/types";
 import { config } from "./config";
 import { runAgent } from "./agent";
+import { fetchPaidData } from "./client";
 
-export function createServer() {
+export async function createServer() {
   const app = express();
   app.use(express.json());
 
@@ -36,9 +37,16 @@ export function createServer() {
   });
 
   // Resource server delegates verification to the facilitator
+  const evmScheme = new ExactEvmScheme().registerMoneyParser(
+    async (amount, network) => {
+      if (network !== config.network.testnet) return null;
+      const tokenAmount = Math.round(amount * 1_000_000).toString();
+      return { amount: tokenAmount, asset: config.usdc.testnet, extra: { name: "TestUSDC", version: "1" } };
+    }
+  );
   const resourceServer = new x402ResourceServer(facilitatorClient).register(
     networkId,
-    new ExactEvmScheme()
+    evmScheme
   );
 
   // Route payment configuration
@@ -65,8 +73,19 @@ export function createServer() {
     },
   };
 
-  // x402 payment middleware — wraps protected routes
-  app.use(paymentMiddleware(routes, resourceServer, undefined, undefined, false));
+  // x402 HTTP server — initialize with retry (waits for facilitator)
+  const httpServer = new x402HTTPResourceServer(resourceServer, routes);
+  for (let i = 0; i < 5; i++) {
+    try {
+      await httpServer.initialize();
+      break;
+    } catch (err) {
+      if (i === 4) throw new Error("Facilitator not reachable after 5 retries");
+      console.log(`[x402] Waiting for facilitator... (${i + 1}/5)`);
+      await new Promise((r) => setTimeout(r, 2000));
+    }
+  }
+  app.use(paymentMiddlewareFromHTTPServer(httpServer, undefined, undefined, false));
 
   // ─── Routes (only reached after payment verified) ─────────────
 
@@ -121,6 +140,38 @@ export function createServer() {
         "GET /pools": `${config.x402.pricePerCall} USDC — Top pool data`,
       },
       x402Facilitator: config.x402.facilitatorUrl,
+    });
+  });
+
+  // In-memory spend log
+  const spendLog: { time: string; target: string; amount: string; service: string; status: string }[] = [];
+
+  // GET /buy/:endpoint — proxy that pays via x402 using env wallet
+  app.get("/buy/:endpoint", async (req, res) => {
+    const { endpoint } = req.params;
+    if (!["yield", "pools"].includes(endpoint)) {
+      return res.status(404).json({ error: "Unknown endpoint" });
+    }
+    try {
+      const data = await fetchPaidData(`http://localhost:${config.port}/${endpoint}`);
+      spendLog.push({ time: new Date().toISOString(), target: `/${endpoint}`, amount: "0.001", service: "ArbiAgent", status: "confirmed" });
+      res.json(data);
+    } catch (err) {
+      spendLog.push({ time: new Date().toISOString(), target: `/${endpoint}`, amount: "0.001", service: "ArbiAgent", status: "failed" });
+      res.status(500).json({ error: "Buy failed", detail: String(err) });
+    }
+  });
+
+  // GET /spend — spending history
+  app.get("/spend", (_req, res) => {
+    const confirmed = spendLog.filter((e) => e.status === "confirmed");
+    const totalSpent = confirmed.length * 0.001;
+    const services = new Set(confirmed.map((e) => e.target)).size;
+    res.json({
+      totalSpent: `$${totalSpent.toFixed(3)}`,
+      servicesUsed: services,
+      avgCost: confirmed.length ? `$${(totalSpent / confirmed.length).toFixed(3)}` : "$0.000",
+      entries: spendLog.slice().reverse(),
     });
   });
 

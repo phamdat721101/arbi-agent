@@ -16,9 +16,9 @@ export default function PoolsPage() {
         const agentData = await fetchAgent();
         setAgent(agentData);
 
-        // Try fetching pools (will get 402 without payment, that's expected)
-        const res = await fetch(`${API_URL}/pools`);
-        if (res.status === 200) {
+        // Fetch pools via buy proxy (pays with env wallet)
+        const res = await fetch(`${API_URL}/buy/pools`);
+        if (res.ok) {
           const data = await res.json();
           setPools(data.pools || []);
         }
@@ -51,15 +51,11 @@ export default function PoolsPage() {
         </div>
       )}
 
-      {/* Payment Notice */}
+      {/* No data notice */}
       {pools.length === 0 && !loading && (
         <div className="bg-[#161B22] border border-[#D29922] rounded-lg p-4">
-          <p className="text-sm text-[#D29922] mb-2">
-            Payment required to access pool data
-          </p>
-          <p className="text-xs text-[#8B949E]">
-            The GET /pools endpoint requires $0.001 USDC via x402 protocol. Use
-            the API Console or test-client.ts to make a paid request.
+          <p className="text-sm text-[#D29922]">
+            Unable to load pool data. Make sure the agent is running.
           </p>
         </div>
       )}

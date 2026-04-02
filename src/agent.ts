@@ -1,18 +1,12 @@
 /**
  * agent.ts
  *
- * The AI reasoning layer. Given a user query,
- * the LLM decides what data to fetch and composes a response.
- *
- * This is what makes it an "AI agent" rather than just an API.
+ * The AI reasoning layer using Claude via AWS Bedrock.
  */
 
-import OpenAI from "openai";
 import { getUniswapPools, getArbitrumStats } from "./arbitrum";
 import { getUsdcBalance } from "./wallet";
 import { config } from "./config";
-
-const openai = new OpenAI({ apiKey: config.openai.apiKey });
 
 export interface AgentQuery {
   endpoint: string;
@@ -27,8 +21,25 @@ export interface AgentResponse {
   timestamp: string;
 }
 
+async function callClaude(prompt: string): Promise<string> {
+  const url = `https://bedrock-runtime.${config.bedrock.region}.amazonaws.com/model/${encodeURIComponent(config.bedrock.model)}/converse`;
+  const res = await fetch(url, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${config.bedrock.apiKey}`,
+    },
+    body: JSON.stringify({
+      messages: [{ role: "user", content: [{ text: prompt }] }],
+      inferenceConfig: { maxTokens: 200, temperature: 0.3 },
+    }),
+  });
+  if (!res.ok) throw new Error(`Bedrock error ${res.status}: ${await res.text()}`);
+  const data = await res.json();
+  return data.output?.message?.content?.[0]?.text || "No summary available";
+}
+
 export async function runAgent(query: AgentQuery): Promise<AgentResponse> {
-  // Step 1: Fetch relevant on-chain data
   const [pools, stats, balance] = await Promise.all([
     getUniswapPools(5),
     getArbitrumStats(),
@@ -37,7 +48,6 @@ export async function runAgent(query: AgentQuery): Promise<AgentResponse> {
 
   const rawData = { pools, stats };
 
-  // Step 2: LLM summarizes the data for the caller
   const prompt = `You are an autonomous DeFi agent running on Arbitrum.
 A user queried your endpoint: ${query.endpoint}
 With params: ${JSON.stringify(query.params)}
@@ -49,15 +59,10 @@ Provide a concise, useful 2-3 sentence summary of the most actionable insights.
 Focus on: best APR opportunities, notable TVL, any risks.
 Be direct and quantitative. No fluff.`;
 
-  const completion = await openai.chat.completions.create({
-    model: config.openai.model,
-    messages: [{ role: "user", content: prompt }],
-    max_tokens: 200,
-    temperature: 0.3,
-  });
+  const summary = await callClaude(prompt);
 
   return {
-    summary: completion.choices[0].message.content || "No summary available",
+    summary,
     data: rawData,
     agentWallet: config.wallet.address,
     usdcBalance: balance,

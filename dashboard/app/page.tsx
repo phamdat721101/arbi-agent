@@ -72,7 +72,7 @@ export default function Home() {
               <div className="flex gap-2">
                 <button
                   onClick={() =>
-                    window.open(`${API_URL}/${endpoint}`, "_blank")
+                    window.open(`${API_URL}/buy/${endpoint}`, "_blank")
                   }
                   className="text-xs px-3 py-1.5 bg-[#12AAFF] text-white rounded hover:bg-[#0E8AD6] transition-colors"
                 >
@@ -81,7 +81,7 @@ export default function Home() {
                 <button
                   onClick={() =>
                     navigator.clipboard.writeText(
-                      `curl ${API_URL}/${endpoint}`
+                      `curl ${API_URL}/buy/${endpoint}`
                     )
                   }
                   className="text-xs px-3 py-1.5 border border-[#21262D] text-[#8B949E] rounded hover:text-[#E6EDF3] transition-colors"

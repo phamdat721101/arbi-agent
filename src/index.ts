@@ -10,7 +10,7 @@ import { getArbitrumStats } from "./arbitrum";
 import { config } from "./config";
 
 async function main() {
-  const app = createServer();
+  const app = await createServer();
 
   app.listen(config.port, async () => {
     const [balance, stats] = await Promise.all([
@@ -22,11 +22,14 @@ async function main() {
 ╔══════════════════════════════════════════════════════╗
 ║              ArbiAgent — Online                      ║
 ╠══════════════════════════════════════════════════════╣
-║  Wallet:  ${agentAddress}
-║  USDC:    ${balance} USDC
-║  Network: ${stats.network}
-║  Block:   ${stats.blockNumber}
-║  Port:    ${config.port}
+║  Wallet:      ${agentAddress}
+║  USDC:        ${balance} USDC
+║  USDC Token:  ${config.usdc.testnet}
+║  Network:     ${stats.network}
+║  Block:       ${stats.blockNumber}
+║  Port:        ${config.port}
+║  Facilitator: ${config.x402.facilitatorUrl}
+║  Settlement:  ${config.x402.enableSettlement ? "ENABLED" : "VERIFY-ONLY"}
 ╠══════════════════════════════════════════════════════╣
 ║  Endpoints (require $0.001 USDC via x402):           ║
 ║    GET http://localhost:${config.port}/yield              ║

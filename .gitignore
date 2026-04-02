@@ -39,6 +39,11 @@ yarn-error.log*
 # Next.js generated
 dashboard/next-env.d.ts
 
+# Hardhat
+artifacts/
+cache/
+out/
+
 # Misc
 *.pem
 .vercel

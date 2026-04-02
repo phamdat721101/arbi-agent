@@ -6,20 +6,14 @@ export async function fetchAgent(): Promise<AgentIdentity> {
 }
 
 export async function fetchYield(): Promise<YieldResponse> {
-  const res = await fetch(`${API_URL}/yield`, { cache: "no-store" });
-  if (res.status === 402) {
-    const body = await res.json();
-    return { status: 402, paymentRequired: body };
-  }
+  const res = await fetch(`${API_URL}/buy/yield`, { cache: "no-store" });
+  if (!res.ok) return { status: res.status };
   return { status: 200, data: await res.json() };
 }
 
 export async function fetchPools(): Promise<PoolsResponse> {
-  const res = await fetch(`${API_URL}/pools`, { cache: "no-store" });
-  if (res.status === 402) {
-    const body = await res.json();
-    return { status: 402, paymentRequired: body };
-  }
+  const res = await fetch(`${API_URL}/buy/pools`, { cache: "no-store" });
+  if (!res.ok) return { status: res.status };
   return { status: 200, data: await res.json() };
 }
 

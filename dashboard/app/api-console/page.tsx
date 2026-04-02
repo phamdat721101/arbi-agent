@@ -15,7 +15,8 @@ export default function ApiConsolePage() {
     setLoading(true);
     setResponse(null);
     try {
-      const url = `${API_URL}${endpoint}${params ? `?${params}` : ""}`;
+      const prefix = endpoint === "/" ? "" : "/buy";
+      const url = `${API_URL}${prefix}${endpoint}${params ? `?${params}` : ""}`;
       const res = await fetch(url);
       setStatus(res.status);
       const data = await res.json();
