@@ -1,0 +1,35 @@
+{
+  "name": "arbi-agent",
+  "version": "1.0.0",
+  "description": "Autonomous AI agent selling DeFi data via x402 micropayments on Arbitrum",
+  "main": "src/index.ts",
+  "scripts": {
+    "start": "tsx src/index.ts",
+    "dev": "tsx watch src/index.ts",
+    "dev:dashboard": "cd dashboard && npm run dev",
+    "dev:all": "concurrently \"npm run dev\" \"npm run dev:dashboard\"",
+    "build:dashboard": "cd dashboard && npm run build",
+    "demo": "tsx scripts/demo.ts",
+    "test:endpoints": "tsx scripts/test-endpoints.ts",
+    "test:payment": "tsx scripts/test-payment.ts",
+    "setup": "bash scripts/setup.sh"
+  },
+  "dependencies": {
+    "@x402/core": "^2.8.0",
+    "@x402/evm": "^2.8.0",
+    "@x402/express": "^2.8.0",
+    "@x402/fetch": "^2.8.0",
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2",
+    "openai": "^4.77.0",
+    "viem": "^2.23.2"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.0",
+    "@types/node": "^22.10.5",
+    "concurrently": "^9.1.2",
+    "ts-node": "^10.9.2",
+    "tsx": "^4.21.0",
+    "typescript": "^5.7.3"
+  }
+}
