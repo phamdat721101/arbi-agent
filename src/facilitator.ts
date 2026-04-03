@@ -38,6 +38,12 @@ function randomNonce(): string {
   return "0x" + [...Array(64)].map(() => Math.floor(Math.random() * 16).toString(16)).join("");
 }
 
+// ─── GET / ─────────────────────────────────────────────────
+
+app.get("/", (_req, res) => {
+  res.json({ service: "x402-facilitator", status: "ok", address: FACILITATOR_ADDRESS, network: NETWORK });
+});
+
 // ─── GET /supported ─────────────────────────────────────────
 
 app.get("/supported", (_req, res) => {
@@ -95,6 +101,8 @@ app.post("/settle", async (req, res) => {
     console.log("[Facilitator] Verify-only — skipping on-chain settlement");
     return res.json({ success: true, transaction: "0x0", network: NETWORK });
   }
+
+  const payload = parseSdkPayload(req) || req.body;
 
   try {
     const from = payload.permit?.owner as `0x${string}`;

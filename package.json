@@ -15,8 +15,10 @@
     "build:dashboard": "cd dashboard && npm run build",
     "demo": "tsx scripts/demo.ts",
     "setup:usdc": "npx hardhat compile && npm run deploy:usdc && npm run seed:usdc",
+    "register:agent": "tsx scripts/register-agent.ts",
     "test:endpoints": "tsx scripts/test-endpoints.ts",
     "test:payment": "tsx scripts/test-payment.ts",
+    "vps:start": "bash scripts/vps-start.sh",
     "setup": "bash scripts/setup.sh"
   },
   "dependencies": {
